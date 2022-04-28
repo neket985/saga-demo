@@ -35,7 +35,7 @@ class SagaStepRepository(
     fun updateStateByIdAndIncrementTriesCount(id: Int, state: StepCompletionType) =
         dsl.update(SAGA_STEP)
             .set(SAGA_STEP.COMPLETION_STATE, state)
-            .set(SAGA_STEP.TRIES_COUNT, incr(SAGA_STEP.TRIES_COUNT))
+            .set(SAGA_STEP.TRIES_COUNT, SAGA_STEP.TRIES_COUNT.plus(1))
             .where(SAGA_STEP.ID.eq(id))
             .execute()
 }

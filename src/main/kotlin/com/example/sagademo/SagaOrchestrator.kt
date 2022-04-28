@@ -17,7 +17,7 @@ import java.time.LocalDateTime
 import java.util.*
 
 open class SagaOrchestrator private constructor(
-    private val orchestratorAlias: String,
+    val orchestratorAlias: String,
     private val sagaRepo: SagaRepository,
     private val sagaStepRepo: SagaStepRepository,
     private val sagaStepErrorRepository: SagaStepErrorRepository,
@@ -29,16 +29,19 @@ open class SagaOrchestrator private constructor(
     fun runNew(initContext: Any?, serde: ContextSerde<*>) = runNew(initContext?.let { serde.serialize(it) })
     fun runNew(initContext: ByteArray?) {
         val sagaId = insertSagaWithSteps(initContext)
-        val saga = sagaRepo.getByIdJoinSteps(sagaId)!!
+        val saga = sagaRepo.fetchByIdJoinSteps(sagaId).first()
         run(saga)
     }
+
+    fun selectBatchForRetry(batchSize: Int): List<SagaWithSteps> =
+        sagaRepo.selectForRetryWithUpdatingState(orchestratorAlias, batchSize)
 
     fun run(saga: SagaWithSteps) {
         runCatching {
             checkAndExecute(saga)
             sagaRepo.updateStateById(saga.saga.id!!, CompletionType.COMPLETE)
         }.onFailure {
-            sagaRepo.updateStateAndSetNextTriesById(saga.saga.id!!, CompletionType.ERROR, LocalDateTime.now().plusSeconds(30)) //todo сделать постепенный рост задержки между ретраями
+            sagaRepo.updateStateAndSetNextTriesById(saga.saga.id!!, CompletionType.ERROR, LocalDateTime.now().plusSeconds(1)) //todo сделать постепенный рост задержки между ретраями
         }.getOrThrow()
     }
 
@@ -89,7 +92,7 @@ open class SagaOrchestrator private constructor(
 
     fun tryCompleteStep(sagaId: Int, step: SagaStep, nextStep: SagaStep?) = tryExecStep(sagaId, step) {
         val (view, serde) = stepsView[step.stepNumber!!]
-        @Suppress("UNCHECKED_CAST")
+        @Suppress("UNCHECKED_CAST")//fixme types mismatch
         val nextCtx = (view as SagaStepView<Any, *>).execute(serde as ContextSerde<Any>, step.context)
         tm.execute {
             sagaStepRepo.updateStateById(step.id!!, StepCompletionType.SUCCESS)
@@ -105,7 +108,7 @@ open class SagaOrchestrator private constructor(
     fun tryRollbackStep(sagaId: Int, step: SagaStep) = tryExecStep(sagaId, step) {
         val (view, serde) = stepsView[step.stepNumber!!]
         if (view !is SagaCompensatableStepView) error("wrong step view type ${view::class.java}. it must be ${SagaCompensatableStepView::class.java}")
-        @Suppress("UNCHECKED_CAST")
+        @Suppress("UNCHECKED_CAST")//fixme types mismatch
         (view as SagaCompensatableStepView<Any, *>).rollback(serde as ContextSerde<Any>, step.context)
         sagaStepRepo.updateStateById(step.id!!, StepCompletionType.ROLLBACK)
     }
@@ -149,11 +152,6 @@ open class SagaOrchestrator private constructor(
             sagaStepRepo.insert(*steps.toTypedArray())
             return@execute sagaId
         }!!
-    }
-
-    companion object {
-        fun builder(sagaRepo: SagaRepository, sagaStepRepo: SagaStepRepository, sagaStepErrorRepository: SagaStepErrorRepository, tm: TransactionTemplate) =
-            Builder<Any>(sagaRepo, sagaStepRepo, sagaStepErrorRepository, tm)
     }
 
     class Builder<L>(

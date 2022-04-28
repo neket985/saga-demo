@@ -72,27 +72,27 @@ open class SagaStepError(
     /**
      * The column <code>public.saga_step_error.saga_id</code>.
      */
-    val SAGA_ID: TableField<SagaStepErrorRecord, Int?> = createField(DSL.name("saga_id"), SQLDataType.INTEGER, this, "")
+    val SAGA_ID: TableField<SagaStepErrorRecord, Int?> = createField(DSL.name("saga_id"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
      * The column <code>public.saga_step_error.saga_step_id</code>.
      */
-    val SAGA_STEP_ID: TableField<SagaStepErrorRecord, Int?> = createField(DSL.name("saga_step_id"), SQLDataType.INTEGER, this, "")
+    val SAGA_STEP_ID: TableField<SagaStepErrorRecord, Int?> = createField(DSL.name("saga_step_id"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
      * The column <code>public.saga_step_error.tries_counter</code>.
      */
-    val TRIES_COUNTER: TableField<SagaStepErrorRecord, Int?> = createField(DSL.name("tries_counter"), SQLDataType.INTEGER, this, "")
+    val TRIES_COUNTER: TableField<SagaStepErrorRecord, Int?> = createField(DSL.name("tries_counter"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
      * The column <code>public.saga_step_error.description</code>.
      */
-    val DESCRIPTION: TableField<SagaStepErrorRecord, String?> = createField(DSL.name("description"), SQLDataType.VARCHAR, this, "")
+    val DESCRIPTION: TableField<SagaStepErrorRecord, String?> = createField(DSL.name("description"), SQLDataType.VARCHAR.nullable(false), this, "")
 
     /**
      * The column <code>public.saga_step_error.inserted_at</code>.
      */
-    val INSERTED_AT: TableField<SagaStepErrorRecord, LocalDateTime?> = createField(DSL.name("inserted_at"), SQLDataType.LOCALDATETIME(6).defaultValue(DSL.field("now()", SQLDataType.LOCALDATETIME)), this, "")
+    val INSERTED_AT: TableField<SagaStepErrorRecord, LocalDateTime?> = createField(DSL.name("inserted_at"), SQLDataType.LOCALDATETIME(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.LOCALDATETIME)), this, "")
 
     private constructor(alias: Name, aliased: Table<SagaStepErrorRecord>?): this(alias, null, null, aliased, null)
     private constructor(alias: Name, aliased: Table<SagaStepErrorRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, aliased, parameters)

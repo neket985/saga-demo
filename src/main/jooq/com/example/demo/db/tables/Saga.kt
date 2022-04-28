@@ -71,32 +71,32 @@ open class Saga(
     /**
      * The column <code>public.saga.orchestrator_alias</code>.
      */
-    val ORCHESTRATOR_ALIAS: TableField<SagaRecord, String?> = createField(DSL.name("orchestrator_alias"), SQLDataType.VARCHAR, this, "")
+    val ORCHESTRATOR_ALIAS: TableField<SagaRecord, String?> = createField(DSL.name("orchestrator_alias"), SQLDataType.VARCHAR.nullable(false), this, "")
 
     /**
      * The column <code>public.saga.completion_state</code>.
      */
-    val COMPLETION_STATE: TableField<SagaRecord, CompletionType?> = createField(DSL.name("completion_state"), SQLDataType.VARCHAR.asEnumDataType(com.example.demo.db.enums.CompletionType::class.java), this, "")
+    val COMPLETION_STATE: TableField<SagaRecord, CompletionType?> = createField(DSL.name("completion_state"), SQLDataType.VARCHAR.nullable(false).asEnumDataType(com.example.demo.db.enums.CompletionType::class.java), this, "")
 
     /**
      * The column <code>public.saga.tries_count</code>.
      */
-    val TRIES_COUNT: TableField<SagaRecord, Int?> = createField(DSL.name("tries_count"), SQLDataType.INTEGER.defaultValue(DSL.field("0", SQLDataType.INTEGER)), this, "")
+    val TRIES_COUNT: TableField<SagaRecord, Int?> = createField(DSL.name("tries_count"), SQLDataType.INTEGER.nullable(false).defaultValue(DSL.field("0", SQLDataType.INTEGER)), this, "")
 
     /**
      * The column <code>public.saga.next_tries_at</code>.
      */
-    val NEXT_TRIES_AT: TableField<SagaRecord, LocalDateTime?> = createField(DSL.name("next_tries_at"), SQLDataType.LOCALDATETIME(6).defaultValue(DSL.field("now()", SQLDataType.LOCALDATETIME)), this, "")
+    val NEXT_TRIES_AT: TableField<SagaRecord, LocalDateTime?> = createField(DSL.name("next_tries_at"), SQLDataType.LOCALDATETIME(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.LOCALDATETIME)), this, "")
 
     /**
      * The column <code>public.saga.inserted_at</code>.
      */
-    val INSERTED_AT: TableField<SagaRecord, LocalDateTime?> = createField(DSL.name("inserted_at"), SQLDataType.LOCALDATETIME(6).defaultValue(DSL.field("now()", SQLDataType.LOCALDATETIME)), this, "")
+    val INSERTED_AT: TableField<SagaRecord, LocalDateTime?> = createField(DSL.name("inserted_at"), SQLDataType.LOCALDATETIME(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.LOCALDATETIME)), this, "")
 
     /**
      * The column <code>public.saga.updated_at</code>.
      */
-    val UPDATED_AT: TableField<SagaRecord, LocalDateTime?> = createField(DSL.name("updated_at"), SQLDataType.LOCALDATETIME(6).defaultValue(DSL.field("now()", SQLDataType.LOCALDATETIME)), this, "")
+    val UPDATED_AT: TableField<SagaRecord, LocalDateTime?> = createField(DSL.name("updated_at"), SQLDataType.LOCALDATETIME(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.LOCALDATETIME)), this, "")
 
     private constructor(alias: Name, aliased: Table<SagaRecord>?): this(alias, null, null, aliased, null)
     private constructor(alias: Name, aliased: Table<SagaRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, aliased, parameters)

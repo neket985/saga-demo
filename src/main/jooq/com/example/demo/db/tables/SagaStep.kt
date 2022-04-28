@@ -75,27 +75,27 @@ open class SagaStep(
     /**
      * The column <code>public.saga_step.saga_id</code>.
      */
-    val SAGA_ID: TableField<SagaStepRecord, Int?> = createField(DSL.name("saga_id"), SQLDataType.INTEGER, this, "")
+    val SAGA_ID: TableField<SagaStepRecord, Int?> = createField(DSL.name("saga_id"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
      * The column <code>public.saga_step.step_number</code>.
      */
-    val STEP_NUMBER: TableField<SagaStepRecord, Int?> = createField(DSL.name("step_number"), SQLDataType.INTEGER, this, "")
+    val STEP_NUMBER: TableField<SagaStepRecord, Int?> = createField(DSL.name("step_number"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
      * The column <code>public.saga_step.completion_state</code>.
      */
-    val COMPLETION_STATE: TableField<SagaStepRecord, StepCompletionType?> = createField(DSL.name("completion_state"), SQLDataType.VARCHAR.asEnumDataType(com.example.demo.db.enums.StepCompletionType::class.java), this, "")
+    val COMPLETION_STATE: TableField<SagaStepRecord, StepCompletionType?> = createField(DSL.name("completion_state"), SQLDataType.VARCHAR.nullable(false).asEnumDataType(com.example.demo.db.enums.StepCompletionType::class.java), this, "")
 
     /**
      * The column <code>public.saga_step.tries_count</code>.
      */
-    val TRIES_COUNT: TableField<SagaStepRecord, Int?> = createField(DSL.name("tries_count"), SQLDataType.INTEGER.defaultValue(DSL.field("0", SQLDataType.INTEGER)), this, "")
+    val TRIES_COUNT: TableField<SagaStepRecord, Int?> = createField(DSL.name("tries_count"), SQLDataType.INTEGER.nullable(false).defaultValue(DSL.field("0", SQLDataType.INTEGER)), this, "")
 
     /**
      * The column <code>public.saga_step.transaction_type</code>.
      */
-    val TRANSACTION_TYPE: TableField<SagaStepRecord, TransactionType?> = createField(DSL.name("transaction_type"), SQLDataType.VARCHAR.asEnumDataType(com.example.demo.db.enums.TransactionType::class.java), this, "")
+    val TRANSACTION_TYPE: TableField<SagaStepRecord, TransactionType?> = createField(DSL.name("transaction_type"), SQLDataType.VARCHAR.nullable(false).asEnumDataType(com.example.demo.db.enums.TransactionType::class.java), this, "")
 
     /**
      * The column <code>public.saga_step.context</code>.
@@ -105,12 +105,12 @@ open class SagaStep(
     /**
      * The column <code>public.saga_step.inserted_at</code>.
      */
-    val INSERTED_AT: TableField<SagaStepRecord, LocalDateTime?> = createField(DSL.name("inserted_at"), SQLDataType.LOCALDATETIME(6).defaultValue(DSL.field("now()", SQLDataType.LOCALDATETIME)), this, "")
+    val INSERTED_AT: TableField<SagaStepRecord, LocalDateTime?> = createField(DSL.name("inserted_at"), SQLDataType.LOCALDATETIME(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.LOCALDATETIME)), this, "")
 
     /**
      * The column <code>public.saga_step.updated_at</code>.
      */
-    val UPDATED_AT: TableField<SagaStepRecord, LocalDateTime?> = createField(DSL.name("updated_at"), SQLDataType.LOCALDATETIME(6).defaultValue(DSL.field("now()", SQLDataType.LOCALDATETIME)), this, "")
+    val UPDATED_AT: TableField<SagaStepRecord, LocalDateTime?> = createField(DSL.name("updated_at"), SQLDataType.LOCALDATETIME(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.LOCALDATETIME)), this, "")
 
     private constructor(alias: Name, aliased: Table<SagaStepRecord>?): this(alias, null, null, aliased, null)
     private constructor(alias: Name, aliased: Table<SagaStepRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, aliased, parameters)
