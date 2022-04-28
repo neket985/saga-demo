@@ -9,6 +9,9 @@ class JacksonContextSerde<T>(
 
     override fun deserialize(data: ByteArray): T = mapper.readValue(data, clazz)
 
-    override fun serialize(data: T): ByteArray = mapper.writeValueAsBytes(data)
+    override fun serialize(data: Any): ByteArray = mapper.writeValueAsBytes(data)
 
+    companion object {
+        inline fun <reified T> jacksonContextSerde(mapper: ObjectMapper) = JacksonContextSerde(T::class.java, mapper)
+    }
 }

@@ -1,12 +1,13 @@
 package com.example.sagademo
 
+import com.example.sagademo.JacksonContextSerde.Companion.jacksonContextSerde
 import com.example.sagademo.repository.SagaRepository
 import com.example.sagademo.repository.SagaStepErrorRepository
 import com.example.sagademo.repository.SagaStepRepository
-import com.example.sagademo.step.SagaCompensatableStepView
-import com.example.sagademo.step.SagaRetriableStepView
+import com.example.sagademo.step.SagaStepView.Companion.compensatableView
+import com.example.sagademo.step.SagaStepView.Companion.retriableView
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionTemplate
 import javax.annotation.PostConstruct
@@ -25,31 +26,22 @@ class SampleSagaService(
     sagaStepRepo: SagaStepRepository,
     sagaStepErrorRepository: SagaStepErrorRepository,
     tm: TransactionTemplate,
-) : SagaOrchestrator(
-    "simple", sagaRepo, sagaStepRepo, sagaStepErrorRepository, tm,
-    compensatableView<User, User> { sampleService.createUser(it!!) },
-    compensatableView<User, CheckedUser> { sampleService.checkUser(it!!) },
-    retriableView<CheckedUser, String> { sampleService.approveUser(it!!) },
-    retriableView<String, Unit> { sampleService.notifyUser(it!!) }
+    mapper: ObjectMapper,
 ) {
+    private val orchestrator = SagaOrchestrator.Builder<User>(sagaRepo, sagaStepRepo, sagaStepErrorRepository, tm)
+        .setAlias("simple")
+        .addStep(jacksonContextSerde(mapper), compensatableView{ sampleService.createUser(it!!) })
+        .addStep(jacksonContextSerde(mapper), compensatableView { sampleService.checkUser(it!!) })
+        .addStep(jacksonContextSerde(mapper), retriableView{ sampleService.approveUser(it!!) })
+        .addStep(jacksonContextSerde(mapper), retriableView<String, Any> { sampleService.notifyUser(it!!) })
+        .build()
+
     @PostConstruct
     fun test() {
-        runNew(mapper.writeValueAsBytes(User(1, "test")))
+        orchestrator.runNew(User(1, "test"), jacksonContextSerde<Any>(jacksonObjectMapper()))
         println("done")
     }
 
     companion object {
-        val mapper = jacksonObjectMapper()
-        inline fun <reified I, O> compensatableView(crossinline exec: (I?) -> O) = SagaCompensatableStepView { input ->
-            val mapped = input?.let { mapper.readValue<I>(it) }
-            val result = exec(mapped)
-            mapper.writeValueAsBytes(result)
-        }
-
-        inline fun <reified I, O> retriableView(crossinline exec: (I?) -> O) = SagaRetriableStepView { input ->
-            val mapped = input?.let { mapper.readValue<I>(it) }
-            val result = exec(mapped)
-            mapper.writeValueAsBytes(result)
-        }
     }
 }
