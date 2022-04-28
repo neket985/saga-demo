@@ -1,6 +1,6 @@
 package com.example.sagademo
 
-import com.example.sagademo.JacksonContextSerde.Companion.jacksonContextSerde
+import com.example.sagademo.context.JacksonContextSerde.Companion.jacksonContextSerde
 import com.example.sagademo.repository.SagaRepository
 import com.example.sagademo.repository.SagaStepErrorRepository
 import com.example.sagademo.repository.SagaStepRepository
@@ -12,6 +12,7 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.transaction.support.TransactionTemplate
+import java.time.Duration
 import kotlin.random.Random
 
 @SpringBootTest
@@ -33,6 +34,7 @@ internal class SagaOrchestratorTest() {
 
     private val builder by lazy {
         SagaOrchestrator.Builder<Any>(sagaRepository, sagaStepRepository, sagaStepErrorRepository, tm)
+            .setRetryStrategy(ConstRetryStrategy(Duration.ofSeconds(1)))
     }
 
     @Test
@@ -55,7 +57,7 @@ internal class SagaOrchestratorTest() {
     }
 
     @Test
-    fun `rollback test`() {
+    fun `rollback with 2 fails test`() {
         val expectedCustomNumber = Random.nextInt(100)
         var customNumber = expectedCustomNumber
 
@@ -66,10 +68,15 @@ internal class SagaOrchestratorTest() {
             assertEquals(customNumber, it)
         })
 
+        var strangeExceptionThrows = false
         val powStep = compensatableView<Int, Int>({
             customNumber = Math.pow(customNumber.toDouble(), 2.0).toInt()
             customNumber
         }, {
+            if (!strangeExceptionThrows) {
+                strangeExceptionThrows = true
+                throw JokeException("ha-ha i'm so unexpected")
+            }
             customNumber = Math.pow(customNumber.toDouble(), 0.5).toInt()
             assertEquals(customNumber, it)
         })
@@ -94,8 +101,15 @@ internal class SagaOrchestratorTest() {
         Thread.sleep(1000)
 
         orchestrator.selectBatchForRetry(10).forEach {
+            assertThrows<JokeException> { orchestrator.run(it) }
+        }
+
+        Thread.sleep(1000)
+
+        orchestrator.selectBatchForRetry(10).forEach {
             orchestrator.run(it)
         }
+
 
         assertEquals(expectedCustomNumber, customNumber)
     }

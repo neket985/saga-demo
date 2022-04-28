@@ -1,4 +1,4 @@
-package com.example.sagademo
+package com.example.sagademo.repository
 
 import com.example.demo.db.tables.pojos.Saga
 import com.example.demo.db.tables.pojos.SagaStep

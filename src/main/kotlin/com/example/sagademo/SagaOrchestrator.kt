@@ -6,13 +6,16 @@ import com.example.demo.db.enums.TransactionType
 import com.example.demo.db.tables.pojos.Saga
 import com.example.demo.db.tables.pojos.SagaStep
 import com.example.demo.db.tables.pojos.SagaStepError
+import com.example.sagademo.context.ContextSerde
 import com.example.sagademo.repository.SagaRepository
 import com.example.sagademo.repository.SagaStepErrorRepository
 import com.example.sagademo.repository.SagaStepRepository
+import com.example.sagademo.repository.SagaWithSteps
 import com.example.sagademo.step.SagaCompensatableStepView
 import com.example.sagademo.step.SagaStepView
 import org.slf4j.LoggerFactory
 import org.springframework.transaction.support.TransactionTemplate
+import java.time.Duration
 import java.time.LocalDateTime
 import java.util.*
 
@@ -22,6 +25,7 @@ open class SagaOrchestrator private constructor(
     private val sagaStepRepo: SagaStepRepository,
     private val sagaStepErrorRepository: SagaStepErrorRepository,
     private val tm: TransactionTemplate,
+    private val retryStrategy: RetryStrategy,
     private val stepsView: List<Pair<SagaStepView<*, *>, ContextSerde<*>>>
 ) {
     private val logger = LoggerFactory.getLogger(SagaOrchestrator::class.java)
@@ -36,12 +40,15 @@ open class SagaOrchestrator private constructor(
     fun selectBatchForRetry(batchSize: Int): List<SagaWithSteps> =
         sagaRepo.selectForRetryWithUpdatingState(orchestratorAlias, batchSize)
 
+    //todo reset old in_progress saga's
+
     fun run(saga: SagaWithSteps) {
         runCatching {
             checkAndExecute(saga)
             sagaRepo.updateStateById(saga.saga.id!!, CompletionType.COMPLETE)
         }.onFailure {
-            sagaRepo.updateStateAndSetNextTriesById(saga.saga.id!!, CompletionType.ERROR, LocalDateTime.now().plusSeconds(1)) //todo сделать постепенный рост задержки между ретраями
+            val nextTryAt = LocalDateTime.now().plusSeconds(retryStrategy.getNextTime(saga.saga.triesCount!!).seconds)
+            sagaRepo.updateStateAndSetNextTriesById(saga.saga.id!!, CompletionType.ERROR, nextTryAt)
         }.getOrThrow()
     }
 
@@ -160,6 +167,7 @@ open class SagaOrchestrator private constructor(
         private val sagaStepErrorRepository: SagaStepErrorRepository,
         private val tm: TransactionTemplate,
 
+        private var retryStrategy: RetryStrategy = ExponentialRetryStrategy(Duration.ofMinutes(1), 2.0, 10.0),
         private var alias: String = UUID.randomUUID().toString(),
         private val views: List<Pair<SagaStepView<*, *>, ContextSerde<*>>> = listOf()
     ) {
@@ -169,8 +177,13 @@ open class SagaOrchestrator private constructor(
             return this
         }
 
+        fun setRetryStrategy(retryStrategy: RetryStrategy): Builder<L> {
+            this.retryStrategy = retryStrategy
+            return this
+        }
+
         fun <O> addStep(serde: ContextSerde<out L>, view: SagaStepView<out L, O>): Builder<O> {
-            return Builder(sagaRepo, sagaStepRepo, sagaStepErrorRepository, tm, alias, views.plus(view to serde))
+            return Builder(sagaRepo, sagaStepRepo, sagaStepErrorRepository, tm, retryStrategy, alias, views.plus(view to serde))
         }
 
         fun validate() {
@@ -189,7 +202,7 @@ open class SagaOrchestrator private constructor(
         fun build(): SagaOrchestrator {
             validate()
 
-            return SagaOrchestrator(alias, sagaRepo, sagaStepRepo, sagaStepErrorRepository, tm, views)
+            return SagaOrchestrator(alias, sagaRepo, sagaStepRepo, sagaStepErrorRepository, tm, retryStrategy, views)
         }
     }
 }

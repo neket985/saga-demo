@@ -1,6 +1,7 @@
-package com.example.sagademo
+package com.example.sagademo.sample
 
-import com.example.sagademo.JacksonContextSerde.Companion.jacksonContextSerde
+import com.example.sagademo.SagaOrchestrator
+import com.example.sagademo.context.JacksonContextSerde.Companion.jacksonContextSerde
 import com.example.sagademo.repository.SagaRepository
 import com.example.sagademo.repository.SagaStepErrorRepository
 import com.example.sagademo.repository.SagaStepRepository
@@ -20,7 +21,7 @@ import javax.annotation.PostConstruct
  * 4) направляем уведомление пользователю
  */
 @Service
-class SampleSagaService(
+class SampleOrchestrator(
     private val sampleService: SampleService,
     sagaRepo: SagaRepository,
     sagaStepRepo: SagaStepRepository,
@@ -29,19 +30,16 @@ class SampleSagaService(
     mapper: ObjectMapper,
 ) {
     private val orchestrator = SagaOrchestrator.Builder<User>(sagaRepo, sagaStepRepo, sagaStepErrorRepository, tm)
-        .setAlias("simple")
+        .setAlias("sample1")
         .addStep(jacksonContextSerde(mapper), compensatableView{ sampleService.createUser(it!!) })
         .addStep(jacksonContextSerde(mapper), compensatableView { sampleService.checkUser(it!!) })
         .addStep(jacksonContextSerde(mapper), retriableView{ sampleService.approveUser(it!!) })
         .addStep(jacksonContextSerde(mapper), retriableView<String, Any> { sampleService.notifyUser(it!!) })
         .build()
 
-    @PostConstruct
-    fun test() {
-        orchestrator.runNew(User(1, "test"), jacksonContextSerde<Any>(jacksonObjectMapper()))
-        println("done")
-    }
-
-    companion object {
-    }
+    /*
+    todo schedulers:
+                        1) retry
+                        2) reset old in process
+     */
 }

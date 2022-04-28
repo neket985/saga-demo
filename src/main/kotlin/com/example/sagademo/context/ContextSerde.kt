@@ -1,4 +1,4 @@
-package com.example.sagademo
+package com.example.sagademo.context
 
 interface ContextSerde<T> {
     fun deserialize(data: ByteArray): T

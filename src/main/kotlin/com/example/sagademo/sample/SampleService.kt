@@ -1,4 +1,4 @@
-package com.example.sagademo
+package com.example.sagademo.sample
 
 import org.springframework.stereotype.Service
 
@@ -28,6 +28,3 @@ class SampleService {
         println("notify")
     }
 }
-
-data class User(val id: Int, val name: String)
-data class CheckedUser(val user: User, val checkStatus: Int)

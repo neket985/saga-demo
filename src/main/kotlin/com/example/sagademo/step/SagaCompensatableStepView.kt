@@ -1,7 +1,7 @@
 package com.example.sagademo.step
 
 import com.example.demo.db.enums.TransactionType
-import com.example.sagademo.ContextSerde
+import com.example.sagademo.context.ContextSerde
 
 interface SagaCompensatableStepView<I, O> : SagaStepView<I, O> {
     override val transactionType: TransactionType
