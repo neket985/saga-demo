@@ -1,7 +1,6 @@
-package com.example.sagademo
+package com.example.sagademo.strategy
 
 import java.time.Duration
-import java.time.LocalDateTime
 
 class LinearRetryStrategy(private val initDuration: Duration, private val scale: Double = 1.0) : RetryStrategy {
     init {

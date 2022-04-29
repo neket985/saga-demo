@@ -13,6 +13,8 @@ import com.example.sagademo.repository.SagaStepRepository
 import com.example.sagademo.repository.SagaWithSteps
 import com.example.sagademo.step.SagaCompensatableStepView
 import com.example.sagademo.step.SagaStepView
+import com.example.sagademo.strategy.ExponentialRetryStrategy
+import com.example.sagademo.strategy.RetryStrategy
 import org.slf4j.LoggerFactory
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.Duration
@@ -31,7 +33,7 @@ open class SagaOrchestrator private constructor(
     private val logger = LoggerFactory.getLogger(SagaOrchestrator::class.java)
 
     fun runNew(initContext: Any?, serde: ContextSerde<*>) = runNew(initContext?.let { serde.serialize(it) })
-    fun runNew(initContext: ByteArray?) {
+    private fun runNew(initContext: ByteArray?) {
         val sagaId = insertSagaWithSteps(initContext)
         val saga = sagaRepo.fetchByIdJoinSteps(sagaId).first()
         run(saga)
@@ -53,7 +55,7 @@ open class SagaOrchestrator private constructor(
     }
 
     // проверяем сагу, чтобы понять, на чем мы остановились и куда дальше идти (продолжение сценария/откат)
-    fun checkAndExecute(saga: SagaWithSteps) {
+    private fun checkAndExecute(saga: SagaWithSteps) {
         logger.debug("Check saga #${saga.saga.id}")
         stepsView.indices.forEach { stepNumber ->
             val step = saga.getStep(stepNumber) ?: error("not found step $stepNumber for saga #${saga.saga.id}")
@@ -76,9 +78,8 @@ open class SagaOrchestrator private constructor(
         logger.warn("Saga #${saga.saga.id} always succeed")
     }
 
-
     //продолжить выполнение сценария
-    fun completeSaga(saga: SagaWithSteps, fromStep: Int) {
+    private fun completeSaga(saga: SagaWithSteps, fromStep: Int) {
         logger.debug("Complete saga #${saga.saga.id} from step $fromStep")
         (fromStep until stepsView.size).forEach { stepNumber ->
             val step = saga.getStep(stepNumber) ?: error("not found step $stepNumber for saga #${saga.saga.id}")
@@ -88,7 +89,7 @@ open class SagaOrchestrator private constructor(
     }
 
     //выполнить откат всех шагов
-    fun rollbackSaga(saga: SagaWithSteps, fromStep: Int) {
+    private fun rollbackSaga(saga: SagaWithSteps, fromStep: Int) {
         logger.debug("Rollback saga #${saga.saga.id} from step $fromStep")
         (0..fromStep).reversed().forEach { stepNumber ->
             val step = saga.getStep(stepNumber) ?: error("not found step $stepNumber for saga #${saga.saga.id}")
@@ -97,7 +98,7 @@ open class SagaOrchestrator private constructor(
         }
     }
 
-    fun tryCompleteStep(sagaId: Int, step: SagaStep, nextStep: SagaStep?) = tryExecStep(sagaId, step) {
+    private fun tryCompleteStep(sagaId: Int, step: SagaStep, nextStep: SagaStep?) = tryExecStep(sagaId, step) {
         val (view, serde) = stepsView[step.stepNumber!!]
         @Suppress("UNCHECKED_CAST")//fixme types mismatch
         val nextCtx = (view as SagaStepView<Any, *>).execute(serde as ContextSerde<Any>, step.context)
@@ -112,7 +113,7 @@ open class SagaOrchestrator private constructor(
         nextCtx
     }
 
-    fun tryRollbackStep(sagaId: Int, step: SagaStep) = tryExecStep(sagaId, step) {
+    private fun tryRollbackStep(sagaId: Int, step: SagaStep) = tryExecStep(sagaId, step) {
         val (view, serde) = stepsView[step.stepNumber!!]
         if (view !is SagaCompensatableStepView) error("wrong step view type ${view::class.java}. it must be ${SagaCompensatableStepView::class.java}")
         @Suppress("UNCHECKED_CAST")//fixme types mismatch
@@ -120,7 +121,7 @@ open class SagaOrchestrator private constructor(
         sagaStepRepo.updateStateById(step.id!!, StepCompletionType.ROLLBACK)
     }
 
-    fun <T> tryExecStep(sagaId: Int, step: SagaStep, exec: () -> T): T =
+    private fun <T> tryExecStep(sagaId: Int, step: SagaStep, exec: () -> T): T =
         runCatching {
             exec()
         }.onFailure { err ->
@@ -136,7 +137,6 @@ open class SagaOrchestrator private constructor(
                 )
             }
         }.getOrThrow()
-
 
     private fun insertSagaWithSteps(initContext: ByteArray?): Int {
         val saga = Saga(

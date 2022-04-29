@@ -5,6 +5,7 @@ import com.example.sagademo.repository.SagaRepository
 import com.example.sagademo.repository.SagaStepErrorRepository
 import com.example.sagademo.repository.SagaStepRepository
 import com.example.sagademo.step.SagaStepView.Companion.compensatableView
+import com.example.sagademo.strategy.ConstRetryStrategy
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
