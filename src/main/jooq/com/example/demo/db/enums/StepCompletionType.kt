@@ -4,7 +4,7 @@
 package com.example.demo.db.enums
 
 
-import com.example.demo.db.Public
+import com.example.demo.db.SagaScheme
 
 import org.jooq.Catalog
 import org.jooq.EnumType
@@ -21,7 +21,7 @@ enum class StepCompletionType(@get:JvmName("literal") val literal: String) : Enu
     ERROR("ERROR"),
     ROLLBACK("ROLLBACK");
     override fun getCatalog(): Catalog? = schema.catalog
-    override fun getSchema(): Schema = Public.PUBLIC
+    override fun getSchema(): Schema = SagaScheme.SAGA_SCHEME
     override fun getName(): String = "step_completion_type"
     override fun getLiteral(): String = literal
 }

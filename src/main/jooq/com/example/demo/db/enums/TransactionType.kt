@@ -4,7 +4,7 @@
 package com.example.demo.db.enums
 
 
-import com.example.demo.db.Public
+import com.example.demo.db.SagaScheme
 
 import org.jooq.Catalog
 import org.jooq.EnumType
@@ -19,7 +19,7 @@ enum class TransactionType(@get:JvmName("literal") val literal: String) : EnumTy
     COMPENSATABLE("COMPENSATABLE"),
     RETRIABLE("RETRIABLE");
     override fun getCatalog(): Catalog? = schema.catalog
-    override fun getSchema(): Schema = Public.PUBLIC
+    override fun getSchema(): Schema = SagaScheme.SAGA_SCHEME
     override fun getName(): String = "transaction_type"
     override fun getLiteral(): String = literal
 }

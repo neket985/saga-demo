@@ -8,6 +8,7 @@ plugins {
 
     id("nu.studer.jooq") version "5.2.1"
     id("org.flywaydb.flyway") version "8.5.9"
+    `maven-publish`
 }
 
 group = "com.example"
@@ -39,6 +40,7 @@ dependencies {
 flyway {
     url = "jdbc:postgresql://localhost:5432/postgres"
     user = "postgres"
+    schemas = arrayOf("saga_scheme")
     password = "password"
 }
 
@@ -67,7 +69,7 @@ jooq {
 
                     database.apply {
                         schemata.addAll(arrayOf(
-                            org.jooq.meta.jaxb.SchemaMappingType().apply { inputSchema = "public" }
+                            org.jooq.meta.jaxb.SchemaMappingType().apply { inputSchema = "saga_scheme" }
                         ))
                         excludes = "flyway_.*"
                     }
@@ -102,6 +104,14 @@ tasks {
 
     jar {
         enabled = true
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("default") {
+            from(components["java"])
+        }
     }
 }
 

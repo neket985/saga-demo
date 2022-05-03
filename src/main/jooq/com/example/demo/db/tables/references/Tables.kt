@@ -11,16 +11,16 @@ import com.example.demo.db.tables.SagaStepError
 
 
 /**
- * The table <code>public.saga</code>.
+ * The table <code>saga_scheme.saga</code>.
  */
 val SAGA = Saga.SAGA
 
 /**
- * The table <code>public.saga_step</code>.
+ * The table <code>saga_scheme.saga_step</code>.
  */
 val SAGA_STEP = SagaStep.SAGA_STEP
 
 /**
- * The table <code>public.saga_step_error</code>.
+ * The table <code>saga_scheme.saga_step_error</code>.
  */
 val SAGA_STEP_ERROR = SagaStepError.SAGA_STEP_ERROR

@@ -31,9 +31,9 @@ create unique index saga_id_and_step_number_uindex on saga_step (saga_id, step_n
 create table saga_step_error
 (
     id            serial primary key,
-    saga_id       int references saga      not null,
-    saga_step_id  int references saga_step not null,
-    tries_counter int                      not null,
-    description   varchar                  not null,
-    inserted_at   timestamp                not null default now()
+    saga_id       int references saga not null,
+    saga_step_id  int references saga_step,
+    tries_counter int                 not null,
+    description   varchar             not null,
+    inserted_at   timestamp           not null default now()
 );

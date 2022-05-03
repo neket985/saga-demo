@@ -1,11 +1,11 @@
 package com.example.sagademo.repository
 
 import com.example.demo.db.enums.CompletionType
+import com.example.demo.db.tables.Saga.Companion.SAGA
 import com.example.demo.db.tables.daos.SagaDao
 import com.example.demo.db.tables.pojos.Saga
 import com.example.demo.db.tables.pojos.SagaStep
 import com.example.demo.db.tables.records.SagaRecord
-import com.example.demo.db.tables.references.SAGA
 import com.example.demo.db.tables.references.SAGA_STEP
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
@@ -79,4 +79,14 @@ class SagaRepository(
                 SagaWithSteps(saga, steps)
             }
 
+    fun resetOldInProgressAfterTime(alias: String, resetAfter: LocalDateTime) =
+        dsl.update(SAGA)
+            .set(SAGA.COMPLETION_STATE, CompletionType.ERROR)
+            .set(SAGA.TRIES_COUNT, SAGA.TRIES_COUNT.plus(1))
+            .where(SAGA.ORCHESTRATOR_ALIAS.eq(alias))
+            .and(SAGA.UPDATED_AT.greaterThan(resetAfter))
+            .and(SAGA.COMPLETION_STATE.eq(CompletionType.IN_PROGRESS))
+            .returning(SAGA.ID, SAGA.TRIES_COUNT)
+            .fetch()
+            .map { it.id to it.triesCount }
 }

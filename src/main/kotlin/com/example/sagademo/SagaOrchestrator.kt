@@ -42,7 +42,21 @@ open class SagaOrchestrator private constructor(
     fun selectBatchForRetry(batchSize: Int): List<SagaWithSteps> =
         sagaRepo.selectForRetryWithUpdatingState(orchestratorAlias, batchSize)
 
-    //todo reset old in_progress saga's
+    fun resetOldInProgress(operationTimeout: Duration) {
+        tm.execute {
+            val updated = sagaRepo.resetOldInProgressAfterTime(orchestratorAlias, LocalDateTime.now().minusSeconds(operationTimeout.seconds))
+            val errors = updated
+                .map { (sagaId, triesCount) ->
+                    SagaStepError(
+                        sagaId = sagaId,
+                        triesCounter = triesCount,
+                        description = "Saga timed out after ${operationTimeout.seconds} seconds"
+                    )
+                }
+
+            sagaStepErrorRepository.insert(errors)
+        }
+    }
 
     fun run(saga: SagaWithSteps) {
         runCatching {

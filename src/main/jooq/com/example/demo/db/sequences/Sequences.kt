@@ -4,7 +4,7 @@
 package com.example.demo.db.sequences
 
 
-import com.example.demo.db.Public
+import com.example.demo.db.SagaScheme
 
 import org.jooq.Sequence
 import org.jooq.impl.Internal
@@ -13,16 +13,16 @@ import org.jooq.impl.SQLDataType
 
 
 /**
- * The sequence <code>public.saga_id_seq</code>
+ * The sequence <code>saga_scheme.saga_id_seq</code>
  */
-val SAGA_ID_SEQ: Sequence<Int> = Internal.createSequence("saga_id_seq", Public.PUBLIC, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null)
+val SAGA_ID_SEQ: Sequence<Int> = Internal.createSequence("saga_id_seq", SagaScheme.SAGA_SCHEME, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null)
 
 /**
- * The sequence <code>public.saga_step_error_id_seq</code>
+ * The sequence <code>saga_scheme.saga_step_error_id_seq</code>
  */
-val SAGA_STEP_ERROR_ID_SEQ: Sequence<Int> = Internal.createSequence("saga_step_error_id_seq", Public.PUBLIC, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null)
+val SAGA_STEP_ERROR_ID_SEQ: Sequence<Int> = Internal.createSequence("saga_step_error_id_seq", SagaScheme.SAGA_SCHEME, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null)
 
 /**
- * The sequence <code>public.saga_step_id_seq</code>
+ * The sequence <code>saga_scheme.saga_step_id_seq</code>
  */
-val SAGA_STEP_ID_SEQ: Sequence<Int> = Internal.createSequence("saga_step_id_seq", Public.PUBLIC, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null)
+val SAGA_STEP_ID_SEQ: Sequence<Int> = Internal.createSequence("saga_step_id_seq", SagaScheme.SAGA_SCHEME, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null)

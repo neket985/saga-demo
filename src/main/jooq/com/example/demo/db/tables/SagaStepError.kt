@@ -4,7 +4,7 @@
 package com.example.demo.db.tables
 
 
-import com.example.demo.db.Public
+import com.example.demo.db.SagaScheme
 import com.example.demo.db.keys.SAGA_STEP_ERROR_PKEY
 import com.example.demo.db.keys.SAGA_STEP_ERROR__SAGA_STEP_ERROR_SAGA_ID_FKEY
 import com.example.demo.db.keys.SAGA_STEP_ERROR__SAGA_STEP_ERROR_SAGA_STEP_ID_FKEY
@@ -43,7 +43,7 @@ open class SagaStepError(
     parameters: Array<Field<*>?>?
 ): TableImpl<SagaStepErrorRecord>(
     alias,
-    Public.PUBLIC,
+    SagaScheme.SAGA_SCHEME,
     child,
     path,
     aliased,
@@ -54,7 +54,7 @@ open class SagaStepError(
     companion object {
 
         /**
-         * The reference instance of <code>public.saga_step_error</code>
+         * The reference instance of <code>saga_scheme.saga_step_error</code>
          */
         val SAGA_STEP_ERROR = SagaStepError()
     }
@@ -65,32 +65,32 @@ open class SagaStepError(
     override fun getRecordType(): Class<SagaStepErrorRecord> = SagaStepErrorRecord::class.java
 
     /**
-     * The column <code>public.saga_step_error.id</code>.
+     * The column <code>saga_scheme.saga_step_error.id</code>.
      */
     val ID: TableField<SagaStepErrorRecord, Int?> = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "")
 
     /**
-     * The column <code>public.saga_step_error.saga_id</code>.
+     * The column <code>saga_scheme.saga_step_error.saga_id</code>.
      */
     val SAGA_ID: TableField<SagaStepErrorRecord, Int?> = createField(DSL.name("saga_id"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
-     * The column <code>public.saga_step_error.saga_step_id</code>.
+     * The column <code>saga_scheme.saga_step_error.saga_step_id</code>.
      */
     val SAGA_STEP_ID: TableField<SagaStepErrorRecord, Int?> = createField(DSL.name("saga_step_id"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
-     * The column <code>public.saga_step_error.tries_counter</code>.
+     * The column <code>saga_scheme.saga_step_error.tries_counter</code>.
      */
     val TRIES_COUNTER: TableField<SagaStepErrorRecord, Int?> = createField(DSL.name("tries_counter"), SQLDataType.INTEGER.nullable(false), this, "")
 
     /**
-     * The column <code>public.saga_step_error.description</code>.
+     * The column <code>saga_scheme.saga_step_error.description</code>.
      */
     val DESCRIPTION: TableField<SagaStepErrorRecord, String?> = createField(DSL.name("description"), SQLDataType.VARCHAR.nullable(false), this, "")
 
     /**
-     * The column <code>public.saga_step_error.inserted_at</code>.
+     * The column <code>saga_scheme.saga_step_error.inserted_at</code>.
      */
     val INSERTED_AT: TableField<SagaStepErrorRecord, LocalDateTime?> = createField(DSL.name("inserted_at"), SQLDataType.LOCALDATETIME(6).nullable(false).defaultValue(DSL.field("now()", SQLDataType.LOCALDATETIME)), this, "")
 
@@ -98,22 +98,22 @@ open class SagaStepError(
     private constructor(alias: Name, aliased: Table<SagaStepErrorRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, aliased, parameters)
 
     /**
-     * Create an aliased <code>public.saga_step_error</code> table reference
+     * Create an aliased <code>saga_scheme.saga_step_error</code> table reference
      */
     constructor(alias: String): this(DSL.name(alias))
 
     /**
-     * Create an aliased <code>public.saga_step_error</code> table reference
+     * Create an aliased <code>saga_scheme.saga_step_error</code> table reference
      */
     constructor(alias: Name): this(alias, null)
 
     /**
-     * Create a <code>public.saga_step_error</code> table reference
+     * Create a <code>saga_scheme.saga_step_error</code> table reference
      */
     constructor(): this(DSL.name("saga_step_error"), null)
 
     constructor(child: Table<out Record>, key: ForeignKey<out Record, SagaStepErrorRecord>): this(Internal.createPathAlias(child, key), child, key, SAGA_STEP_ERROR, null)
-    override fun getSchema(): Schema = Public.PUBLIC
+    override fun getSchema(): Schema = SagaScheme.SAGA_SCHEME
     override fun getIdentity(): Identity<SagaStepErrorRecord, Int?> = super.getIdentity() as Identity<SagaStepErrorRecord, Int?>
     override fun getPrimaryKey(): UniqueKey<SagaStepErrorRecord> = SAGA_STEP_ERROR_PKEY
     override fun getKeys(): List<UniqueKey<SagaStepErrorRecord>> = listOf(SAGA_STEP_ERROR_PKEY)
