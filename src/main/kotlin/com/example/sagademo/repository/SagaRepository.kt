@@ -86,9 +86,9 @@ class SagaRepository(
             .set(SAGA.TRIES_COUNT, SAGA.TRIES_COUNT.plus(1))
             .set(SAGA.UPDATED_AT, LocalDateTime.now())
             .where(SAGA.ORCHESTRATOR_ALIAS.eq(alias))
-            .and(SAGA.UPDATED_AT.greaterThan(resetAfter))
+            .and(SAGA.UPDATED_AT.lessThan(resetAfter))
             .and(SAGA.COMPLETION_STATE.eq(CompletionType.IN_PROGRESS))
             .returning(SAGA.ID, SAGA.TRIES_COUNT)
             .fetch()
-            .map { it.id to it.triesCount }
+            .map { it.id!! to it.triesCount }
 }

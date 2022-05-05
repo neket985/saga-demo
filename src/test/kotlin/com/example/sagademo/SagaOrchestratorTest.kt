@@ -1,42 +1,24 @@
 package com.example.sagademo
 
 import com.example.sagademo.context.JacksonContextSerde.Companion.jacksonContextSerde
-import com.example.sagademo.repository.SagaRepository
-import com.example.sagademo.repository.SagaStepErrorRepository
-import com.example.sagademo.repository.SagaStepRepository
 import com.example.sagademo.step.SagaStepView.Companion.compensatableView
-import com.example.sagademo.strategy.ConstRetryStrategy
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.transaction.support.TransactionTemplate
-import java.time.Duration
+import java.util.*
 import kotlin.random.Random
 
-@SpringBootTest
-internal class SagaOrchestratorTest() {
-    @Autowired
-    private lateinit var sagaRepository: SagaRepository
-
-    @Autowired
-    private lateinit var sagaStepRepository: SagaStepRepository
-
-    @Autowired
-    private lateinit var sagaStepErrorRepository: SagaStepErrorRepository
-
-    @Autowired
-    private lateinit var tm: TransactionTemplate
+@SpringBootTest(classes = [SagaTestConfiguration::class])
+internal class SagaOrchestratorTest{
 
     @Autowired
     private lateinit var mapper: ObjectMapper
 
-    private val builder by lazy {
-        SagaOrchestrator.builder<Int>(sagaRepository, sagaStepRepository, sagaStepErrorRepository, tm)
-            .setRetryStrategy(ConstRetryStrategy(Duration.ofSeconds(1)))
-    }
+    @Autowired
+    private lateinit var builder: SagaOrchestrator.Builder<Int, Int>
 
     @Test
     fun `simple correct test`() {
@@ -48,7 +30,7 @@ internal class SagaOrchestratorTest() {
             --customNumber
         })
 
-        val orchestrator = builder.setAlias("test")
+        val orchestrator = builder.setAlias("test-correct-${UUID.randomUUID()}")
             .addStep(jacksonContextSerde(mapper), incrementStep)
             .addStep(jacksonContextSerde(mapper), incrementStep)
             .build()
@@ -82,7 +64,7 @@ internal class SagaOrchestratorTest() {
             assertEquals(customNumber, i)
         })
 
-        val orchestrator = builder.setAlias("test")
+        val orchestrator = builder.setAlias("test-rollback-${UUID.randomUUID()}")
             .addStep(jacksonContextSerde(mapper), incrementStep)
             .addStep(jacksonContextSerde(mapper), incrementStep)
             .addStep(jacksonContextSerde(mapper), powStep)
@@ -115,4 +97,5 @@ internal class SagaOrchestratorTest() {
 
         assertEquals(expectedCustomNumber, customNumber)
     }
+
 }

@@ -6,16 +6,16 @@ import java.time.Duration
 
 interface SagaOrchestratorService {
     val orchestrator: SagaOrchestrator<out Any>
-    val batchSize: Int
-    val operationTimeout: Duration
+    val retryBatchSize: Int
+    val inProgressTimeout: Duration
 
     @Scheduled(fixedDelay = 10)
     fun scheduleRetry(){
-        orchestrator.selectBatchForRetry(batchSize).forEach(orchestrator::run)
+        orchestrator.selectBatchForRetry(retryBatchSize).forEach(orchestrator::run)
     }
 
     @Scheduled(fixedDelay = 10)
     fun scheduleResetOldInProgress(){
-        orchestrator.resetOldInProgress(operationTimeout)
+        orchestrator.resetOldInProgress(inProgressTimeout)
     }
 }

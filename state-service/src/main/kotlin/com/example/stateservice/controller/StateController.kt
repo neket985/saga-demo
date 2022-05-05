@@ -4,18 +4,31 @@ import com.example.stateservice.entity.IdEntity
 import com.example.stateservice.service.StateService
 import org.springframework.web.bind.annotation.*
 
-@RestController("/api/order")
+@RestController()
+@RequestMapping("/api/order")
 class StateController(
     private val stateService: StateService
 ) {
 
     @PostMapping
-    fun create() = IdEntity(stateService.createOrder())
+    @ResponseBody
+    fun create(): IdEntity {
+        Thread.sleep(1000)
+        return IdEntity(stateService.createOrder())
+    }
 
     @PutMapping("{id}")
-    fun approve(@PathVariable id: Int) = stateService.approveOrder(id)
+    @ResponseBody
+    fun approve(@PathVariable id: Int) {
+        Thread.sleep(1000)
+        stateService.approveOrder(id)
+    }
 
     @DeleteMapping("{id}")
-    fun reject(@PathVariable id: Int) = stateService.rejectOrder(id)
+    @ResponseBody
+    fun reject(@PathVariable id: Int) {
+        Thread.sleep(1000)
+        stateService.rejectOrder(id)
+    }
 
 }

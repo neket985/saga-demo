@@ -14,6 +14,9 @@ import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.Duration
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import javax.annotation.PostConstruct
 
 /**
@@ -41,10 +44,10 @@ class SampleOrchestrator(
     )
         .setAlias("sample")
         .setRetryStrategy(ExponentialRetryStrategy(Duration.ofSeconds(1), 2.0, 10.0))
-        .addStep(jacksonContextSerde(mapper), compensatableView ({
+        .addStep(jacksonContextSerde(mapper), compensatableView({
             rest.createOrder()
         }, { _, o ->
-            if(o!=null) {
+            if (o != null) {
                 rest.rejectOrder(o)
             }
         }))
@@ -54,11 +57,19 @@ class SampleOrchestrator(
         })
         .build()
 
-    override val batchSize: Int = 100
-    override val operationTimeout: Duration = Duration.ofMinutes(5)
+    override val retryBatchSize: Int = 100
+    override val inProgressTimeout: Duration = Duration.ofMinutes(5)
 
     @PostConstruct
-    fun test(){
-        runCatching { orchestrator.runNew() }.getOrNull()
+    fun test() {
+        val executor = ThreadPoolExecutor(10, 10, 1, TimeUnit.DAYS, LinkedBlockingQueue(100), ThreadPoolExecutor.CallerRunsPolicy())
+        Thread {
+            while (true) {
+                executor.execute {
+                    orchestrator.runNew()
+                }
+                Thread.sleep(500)
+            }
+        }.start()
     }
 }
