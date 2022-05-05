@@ -34,7 +34,7 @@ internal class SagaOrchestratorTest() {
     private lateinit var mapper: ObjectMapper
 
     private val builder by lazy {
-        SagaOrchestrator.Builder<Any>(sagaRepository, sagaStepRepository, sagaStepErrorRepository, tm)
+        SagaOrchestrator.builder<Int>(sagaRepository, sagaStepRepository, sagaStepErrorRepository, tm)
             .setRetryStrategy(ConstRetryStrategy(Duration.ofSeconds(1)))
     }
 
@@ -42,10 +42,10 @@ internal class SagaOrchestratorTest() {
     fun `simple correct test`() {
         var customNumber = 10
 
-        val incrementStep = compensatableView<Any, Any>({
-            customNumber++
+        val incrementStep = compensatableView<Int, Int>({
+            ++customNumber
         }, { _, _ ->
-            customNumber--
+            --customNumber
         })
 
         val orchestrator = builder.setAlias("test")
@@ -53,7 +53,7 @@ internal class SagaOrchestratorTest() {
             .addStep(jacksonContextSerde(mapper), incrementStep)
             .build()
 
-        orchestrator.runNew(customNumber, jacksonContextSerde<Any, Any>(mapper))
+        orchestrator.runNew(customNumber)
         assertEquals(12, customNumber)
     }
 
@@ -97,7 +97,7 @@ internal class SagaOrchestratorTest() {
             .build()
 
         assertThrows<JokeException> {
-            orchestrator.runNew(customNumber, jacksonContextSerde<Any, Any>(mapper))
+            orchestrator.runNew(customNumber)
         }
 
         Thread.sleep(1000)

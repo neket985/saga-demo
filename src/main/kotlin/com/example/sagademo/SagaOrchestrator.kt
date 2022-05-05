@@ -21,7 +21,7 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.util.*
 
-open class SagaOrchestrator private constructor(
+open class SagaOrchestrator<INIT> private constructor(
     val orchestratorAlias: String,
     private val sagaRepo: SagaRepository,
     private val sagaStepRepo: SagaStepRepository,
@@ -31,11 +31,13 @@ open class SagaOrchestrator private constructor(
     private val stepsView: List<Pair<SagaStepView<*, *>, ContextSerde<*, *>>>
 ) {
     private val logger = LoggerFactory.getLogger(SagaOrchestrator::class.java)
+    private val initContextSerde = stepsView.first().second
 
-    fun runNew(initContext: Any?, serde: ContextSerde<*, *>) = runNew(initContext?.let { serde.serialize(it) })
+    fun runNew(initContext: INIT? = null) = runNew(initContext?.let { initContextSerde.serialize(it) })
     private fun runNew(initContext: ByteArray?) {
         val sagaId = insertSagaWithSteps(initContext)
         val saga = sagaRepo.fetchByIdJoinSteps(sagaId).first()
+        logger.debug("Run new saga #$sagaId")
         run(saga)
     }
 
@@ -62,9 +64,11 @@ open class SagaOrchestrator private constructor(
         runCatching {
             checkAndExecute(saga)
             sagaRepo.updateStateById(saga.saga.id!!, CompletionType.COMPLETE)
+            logger.debug("Saga #${saga.saga.id} completes")
         }.onFailure {
             val nextTryAt = LocalDateTime.now().plusSeconds(retryStrategy.getNextTime(saga.saga.triesCount!!).seconds)
             sagaRepo.updateStateAndSetNextTriesById(saga.saga.id!!, CompletionType.ERROR, nextTryAt)
+            logger.debug("Saga #${saga.saga.id} error")
         }.getOrThrow()
     }
 
@@ -175,7 +179,21 @@ open class SagaOrchestrator private constructor(
         }!!
     }
 
-    class Builder<I>(
+    companion object {
+        fun <I> builder(
+            sagaRepo: SagaRepository,
+            sagaStepRepo: SagaStepRepository,
+            sagaStepErrorRepository: SagaStepErrorRepository,
+            tm: TransactionTemplate,
+        ) = Builder<I, I>(
+            sagaRepo,
+            sagaStepRepo,
+            sagaStepErrorRepository,
+            tm
+        )
+    }
+
+    class Builder<INIT, I>(
         private val sagaRepo: SagaRepository,
         private val sagaStepRepo: SagaStepRepository,
         private val sagaStepErrorRepository: SagaStepErrorRepository,
@@ -186,17 +204,17 @@ open class SagaOrchestrator private constructor(
         private val views: List<Pair<SagaStepView<*, *>, ContextSerde<*, *>>> = listOf()
     ) {
 
-        fun setAlias(alias: String): Builder<I> {
+        fun setAlias(alias: String): Builder<INIT, I> {
             this.alias = alias
             return this
         }
 
-        fun setRetryStrategy(retryStrategy: RetryStrategy): Builder<I> {
+        fun setRetryStrategy(retryStrategy: RetryStrategy): Builder<INIT, I> {
             this.retryStrategy = retryStrategy
             return this
         }
 
-        fun <O> addStep(serde: ContextSerde<out I, O>, view: SagaStepView<out I, O>): Builder<O> {
+        fun <O> addStep(serde: ContextSerde<out I, O>, view: SagaStepView<out I, O>): Builder<INIT, O> {
             return Builder(sagaRepo, sagaStepRepo, sagaStepErrorRepository, tm, retryStrategy, alias, views.plus(view to serde))
         }
 
@@ -213,7 +231,7 @@ open class SagaOrchestrator private constructor(
             }
         }
 
-        fun build(): SagaOrchestrator {
+        fun build(): SagaOrchestrator<INIT> {
             validate()
 
             return SagaOrchestrator(alias, sagaRepo, sagaStepRepo, sagaStepErrorRepository, tm, retryStrategy, views)

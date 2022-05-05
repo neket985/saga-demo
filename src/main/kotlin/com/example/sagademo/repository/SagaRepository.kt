@@ -20,6 +20,7 @@ class SagaRepository(
     fun updateStateById(id: Int, state: CompletionType) =
         dsl.update(SAGA)
             .set(SAGA.COMPLETION_STATE, state)
+            .set(SAGA.UPDATED_AT, LocalDateTime.now())
             .where(SAGA.ID.eq(id))
             .execute()
 
@@ -28,6 +29,7 @@ class SagaRepository(
             .set(SAGA.COMPLETION_STATE, state)
             .set(SAGA.TRIES_COUNT, SAGA.TRIES_COUNT.plus(1))
             .set(SAGA.NEXT_TRIES_AT, nextTriesAt)
+            .set(SAGA.UPDATED_AT, LocalDateTime.now())
             .where(SAGA.ID.eq(id))
             .execute()
 
@@ -39,7 +41,6 @@ class SagaRepository(
             execute()
         }.returnedRecord!!.id!!
 
-    @Transactional
     fun selectForRetryWithUpdatingState(alias: String, limit: Int): List<SagaWithSteps> =
         dsl.update(SAGA)
             .set(SAGA.COMPLETION_STATE, CompletionType.IN_PROGRESS)
@@ -83,6 +84,7 @@ class SagaRepository(
         dsl.update(SAGA)
             .set(SAGA.COMPLETION_STATE, CompletionType.ERROR)
             .set(SAGA.TRIES_COUNT, SAGA.TRIES_COUNT.plus(1))
+            .set(SAGA.UPDATED_AT, LocalDateTime.now())
             .where(SAGA.ORCHESTRATOR_ALIAS.eq(alias))
             .and(SAGA.UPDATED_AT.greaterThan(resetAfter))
             .and(SAGA.COMPLETION_STATE.eq(CompletionType.IN_PROGRESS))

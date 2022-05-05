@@ -6,13 +6,13 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
 
 @Service
-class SampleRestService(
-    private val restTemplate: RestTemplate
-) {
+class SampleRestService{
+    private val restTemplate = RestTemplate()
+
     fun createOrder(): Int = restTemplate
         .exchange("http://localhost:8080/api/order", HttpMethod.POST, null, IdEntity::class.java)
         .apply {
-            if(statusCode!=HttpStatus.OK){
+            if (statusCode != HttpStatus.OK) {
                 error("wrong status code $statusCode")
             }
         }.body?.id ?: error("empty body")
@@ -20,7 +20,7 @@ class SampleRestService(
     fun approveOrder(id: Int) = restTemplate
         .exchange("http://localhost:8080/api/order/$id", HttpMethod.PUT, null, Unit::class.java)
         .apply {
-            if(statusCode!=HttpStatus.OK){
+            if (statusCode != HttpStatus.OK) {
                 error("wrong status code $statusCode")
             }
         }
@@ -28,7 +28,7 @@ class SampleRestService(
     fun rejectOrder(id: Int) = restTemplate
         .exchange("http://localhost:8080/api/order/$id", HttpMethod.DELETE, null, Unit::class.java)
         .apply {
-            if(statusCode!=HttpStatus.OK){
+            if (statusCode != HttpStatus.OK) {
                 error("wrong status code $statusCode")
             }
         }

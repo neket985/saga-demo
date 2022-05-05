@@ -5,7 +5,7 @@ import java.time.Duration
 
 
 interface SagaOrchestratorService {
-    val orchestrator: SagaOrchestrator
+    val orchestrator: SagaOrchestrator<out Any>
     val batchSize: Int
     val operationTimeout: Duration
 

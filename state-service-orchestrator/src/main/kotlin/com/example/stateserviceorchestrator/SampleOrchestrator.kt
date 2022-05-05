@@ -10,11 +10,21 @@ import com.example.sagademo.step.SagaStepView.Companion.compensatableView
 import com.example.sagademo.step.SagaStepView.Companion.retriableView
 import com.example.sagademo.strategy.ExponentialRetryStrategy
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.Duration
+import javax.annotation.PostConstruct
 
+/**
+ * Простой пример сервиса, использующего сагу для регистрации пользователя
+ * 1) заводим сущность пользователя в бд (предварительная регистрация)
+ * 2) проводим проверку возможности его регистрации
+ * 3) обновляем статус в бд
+ * 4) направляем уведомление пользователю
+ */
 @Service
+@EnableScheduling
 class SampleOrchestrator(
     sagaRepository: SagaRepository,
     sagaStepRepository: SagaStepRepository,
@@ -23,7 +33,7 @@ class SampleOrchestrator(
     mapper: ObjectMapper,
     private val rest: SampleRestService
 ) : SagaOrchestratorService {
-    override val orchestrator = SagaOrchestrator.Builder<Unit>(
+    override val orchestrator = SagaOrchestrator.builder<Unit>(
         sagaRepository,
         sagaStepRepository,
         sagaStepErrorRepository,
@@ -33,8 +43,10 @@ class SampleOrchestrator(
         .setRetryStrategy(ExponentialRetryStrategy(Duration.ofSeconds(1), 2.0, 10.0))
         .addStep(jacksonContextSerde(mapper), compensatableView ({
             rest.createOrder()
-        }, {
-//            rest.rejectOrder() todo id?
+        }, { _, o ->
+            if(o!=null) {
+                rest.rejectOrder(o)
+            }
         }))
         .addStep(jacksonContextSerde(mapper), retriableView { orderId ->
             orderId!!
@@ -44,4 +56,9 @@ class SampleOrchestrator(
 
     override val batchSize: Int = 100
     override val operationTimeout: Duration = Duration.ofMinutes(5)
+
+    @PostConstruct
+    fun test(){
+        runCatching { orchestrator.runNew() }.getOrNull()
+    }
 }
