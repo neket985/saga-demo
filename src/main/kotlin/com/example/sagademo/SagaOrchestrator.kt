@@ -76,20 +76,10 @@ open class SagaOrchestrator private constructor(
 
             when (step.completionState) {
                 StepCompletionType.WAIT -> return completeSaga(saga, stepNumber)
-                StepCompletionType.ROLLBACK -> {
-                    if (stepNumber > 1) {
-                        rollbackSaga(saga, stepNumber - 1)
-                    }
-                    return
-                }
+                StepCompletionType.ROLLBACK -> return rollbackSaga(saga, stepNumber)
                 StepCompletionType.ERROR -> {
                     when (stepsView[stepNumber].first.transactionType) {
-                        TransactionType.COMPENSATABLE -> {
-                            if (stepNumber > 1) {
-                                return rollbackSaga(saga, stepNumber - 1)
-                            }
-                            return
-                        }
+                        TransactionType.COMPENSATABLE -> return rollbackSaga(saga, stepNumber)
                         TransactionType.RETRIABLE -> return completeSaga(saga, stepNumber)
                     }
                 }
@@ -125,7 +115,7 @@ open class SagaOrchestrator private constructor(
     private fun tryCompleteStep(sagaId: Int, step: SagaStep, nextStep: SagaStep?) = tryExecStep(sagaId, step) {
         val (view, serde) = stepsView[step.stepNumber!!]
         @Suppress("UNCHECKED_CAST")//fixme types mismatch
-        val nextCtx = (view as SagaStepView<Any, *>).execute(serde as ContextSerde<Any, Any>, step.inputContext)
+        val nextCtx = (view as SagaStepView<Any, Any>).execute(serde as ContextSerde<Any, Any>, step.inputContext)
         tm.execute {
             sagaStepRepo.updateStateAndOutputContextById(step.id!!, StepCompletionType.SUCCESS, nextCtx)
             nextStep?.apply {

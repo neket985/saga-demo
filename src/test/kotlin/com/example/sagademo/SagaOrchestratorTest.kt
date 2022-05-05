@@ -44,7 +44,7 @@ internal class SagaOrchestratorTest() {
 
         val incrementStep = compensatableView<Any, Any>({
             customNumber++
-        }, {
+        }, { _, _ ->
             customNumber--
         })
 
@@ -64,22 +64,22 @@ internal class SagaOrchestratorTest() {
 
         val incrementStep = compensatableView<Int, Int>({
             ++customNumber
-        }, {
+        }, { i, _ ->
             --customNumber
-            assertEquals(customNumber, it)
+            assertEquals(customNumber, i)
         })
 
         var strangeExceptionThrows = false
         val powStep = compensatableView<Int, Int>({
             customNumber = Math.pow(customNumber.toDouble(), 2.0).toInt()
             customNumber
-        }, {
+        }, { i, _ ->
             if (!strangeExceptionThrows) {
                 strangeExceptionThrows = true
                 throw JokeException("ha-ha i'm so unexpected")
             }
             customNumber = Math.pow(customNumber.toDouble(), 0.5).toInt()
-            assertEquals(customNumber, it)
+            assertEquals(customNumber, i)
         })
 
         val orchestrator = builder.setAlias("test")
