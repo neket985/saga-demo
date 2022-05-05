@@ -5,10 +5,15 @@ import com.example.sagademo.step.SagaStepView.Companion.retriableView
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.Duration
 import java.util.*
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 @SpringBootTest(classes = [SagaTestConfiguration::class])
 internal class SagaOrchestratorServiceTest {
@@ -44,5 +49,44 @@ internal class SagaOrchestratorServiceTest {
 
         val forRetry = orchestrator.selectBatchForRetry(10)
         assertEquals(1, forRetry.size)
+    }
+
+    @Test
+    fun `test conflicts retry async`() {
+        val executor = ThreadPoolExecutor(20, 20, 0, TimeUnit.DAYS, LinkedBlockingQueue(100), ThreadPoolExecutor.CallerRunsPolicy())
+
+        val orchestrator = builder
+            .setAlias("test-retry-async-${UUID.randomUUID()}")
+            .addStep(jacksonContextSerde(mapper), retriableView {
+                throw JokeException("so, retry it (¬‿¬)")
+                Unit
+            })
+            .build()
+
+
+        val total = 1000
+        (0 until total).map{
+            executor.submit {
+                runCatching { orchestrator.runNew() }
+            }
+        }.forEach { it.get() }
+        LoggerFactory.getLogger(this::class.java).info("tasks prepared for retry")
+
+        Thread.sleep(1_000)
+
+        val batchSize = 20
+        val batchesCount = total / batchSize
+
+        val futures = (0 until (batchesCount * 1.5).toInt()).map {
+            val f = CompletableFuture<List<Int>>()
+            executor.submit {
+                val selected = orchestrator.selectBatchForRetry(batchSize)
+                f.complete(selected.map { it.saga.id!! })
+            }
+            f
+        }.map { it.join() }
+
+        assertEquals(total, futures.sumOf { it.size })
+        assertEquals(total, futures.flatten().distinct().size)
     }
 }
