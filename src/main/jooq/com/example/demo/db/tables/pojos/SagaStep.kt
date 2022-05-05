@@ -22,7 +22,8 @@ data class SagaStep(
     var completionState: StepCompletionType? = null, 
     var triesCount: Int? = null, 
     var transactionType: TransactionType? = null, 
-    var context: ByteArray? = null, 
+    var inputContext: ByteArray? = null, 
+    var outputContext: ByteArray? = null, 
     var insertedAt: LocalDateTime? = null, 
     var updatedAt: LocalDateTime? = null
 ): Serializable {
@@ -37,6 +38,7 @@ data class SagaStep(
         sb.append(", ").append(completionState)
         sb.append(", ").append(triesCount)
         sb.append(", ").append(transactionType)
+        sb.append(", ").append("[binary...]")
         sb.append(", ").append("[binary...]")
         sb.append(", ").append(insertedAt)
         sb.append(", ").append(updatedAt)

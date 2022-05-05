@@ -77,7 +77,7 @@ open class SagaStepError(
     /**
      * The column <code>saga_scheme.saga_step_error.saga_step_id</code>.
      */
-    val SAGA_STEP_ID: TableField<SagaStepErrorRecord, Int?> = createField(DSL.name("saga_step_id"), SQLDataType.INTEGER.nullable(false), this, "")
+    val SAGA_STEP_ID: TableField<SagaStepErrorRecord, Int?> = createField(DSL.name("saga_step_id"), SQLDataType.INTEGER, this, "")
 
     /**
      * The column <code>saga_scheme.saga_step_error.tries_counter</code>.

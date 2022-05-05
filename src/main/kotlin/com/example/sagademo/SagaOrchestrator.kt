@@ -28,11 +28,11 @@ open class SagaOrchestrator private constructor(
     private val sagaStepErrorRepository: SagaStepErrorRepository,
     private val tm: TransactionTemplate,
     private val retryStrategy: RetryStrategy,
-    private val stepsView: List<Pair<SagaStepView<*, *>, ContextSerde<*>>>
+    private val stepsView: List<Pair<SagaStepView<*, *>, ContextSerde<*, *>>>
 ) {
     private val logger = LoggerFactory.getLogger(SagaOrchestrator::class.java)
 
-    fun runNew(initContext: Any?, serde: ContextSerde<*>) = runNew(initContext?.let { serde.serialize(it) })
+    fun runNew(initContext: Any?, serde: ContextSerde<*, *>) = runNew(initContext?.let { serde.serialize(it) })
     private fun runNew(initContext: ByteArray?) {
         val sagaId = insertSagaWithSteps(initContext)
         val saga = sagaRepo.fetchByIdJoinSteps(sagaId).first()
@@ -76,11 +76,21 @@ open class SagaOrchestrator private constructor(
 
             when (step.completionState) {
                 StepCompletionType.WAIT -> return completeSaga(saga, stepNumber)
-                StepCompletionType.ROLLBACK -> return rollbackSaga(saga, stepNumber)
+                StepCompletionType.ROLLBACK -> {
+                    if (stepNumber > 1) {
+                        rollbackSaga(saga, stepNumber - 1)
+                    }
+                    return
+                }
                 StepCompletionType.ERROR -> {
-                    return when (stepsView[stepNumber].first.transactionType) {
-                        TransactionType.COMPENSATABLE -> rollbackSaga(saga, stepNumber)
-                        TransactionType.RETRIABLE -> completeSaga(saga, stepNumber)
+                    when (stepsView[stepNumber].first.transactionType) {
+                        TransactionType.COMPENSATABLE -> {
+                            if (stepNumber > 1) {
+                                return rollbackSaga(saga, stepNumber - 1)
+                            }
+                            return
+                        }
+                        TransactionType.RETRIABLE -> return completeSaga(saga, stepNumber)
                     }
                 }
                 else -> {
@@ -115,13 +125,13 @@ open class SagaOrchestrator private constructor(
     private fun tryCompleteStep(sagaId: Int, step: SagaStep, nextStep: SagaStep?) = tryExecStep(sagaId, step) {
         val (view, serde) = stepsView[step.stepNumber!!]
         @Suppress("UNCHECKED_CAST")//fixme types mismatch
-        val nextCtx = (view as SagaStepView<Any, *>).execute(serde as ContextSerde<Any>, step.context)
+        val nextCtx = (view as SagaStepView<Any, *>).execute(serde as ContextSerde<Any, Any>, step.inputContext)
         tm.execute {
-            sagaStepRepo.updateStateById(step.id!!, StepCompletionType.SUCCESS)
+            sagaStepRepo.updateStateAndOutputContextById(step.id!!, StepCompletionType.SUCCESS, nextCtx)
             nextStep?.apply {
                 //обновляем контекст следующего шага как в бд, так и в памяти
-                sagaStepRepo.updateContextById(this.id!!, nextCtx)
-                nextStep.context = nextCtx
+                sagaStepRepo.updateInputContextById(this.id!!, nextCtx)
+                nextStep.inputContext = nextCtx
             }
         }
         nextCtx
@@ -131,7 +141,7 @@ open class SagaOrchestrator private constructor(
         val (view, serde) = stepsView[step.stepNumber!!]
         if (view !is SagaCompensatableStepView) error("wrong step view type ${view::class.java}. it must be ${SagaCompensatableStepView::class.java}")
         @Suppress("UNCHECKED_CAST")//fixme types mismatch
-        (view as SagaCompensatableStepView<Any, *>).rollback(serde as ContextSerde<Any>, step.context)
+        (view as SagaCompensatableStepView<Any, Any>).rollback(serde as ContextSerde<Any, Any>, step.inputContext, step.outputContext)
         sagaStepRepo.updateStateById(step.id!!, StepCompletionType.ROLLBACK)
     }
 
@@ -167,7 +177,7 @@ open class SagaOrchestrator private constructor(
                     stepNumber = stepNumber,
                     transactionType = view.transactionType,
                     completionState = StepCompletionType.WAIT,
-                    context = if (stepNumber == 0) initContext else null
+                    inputContext = if (stepNumber == 0) initContext else null
                 )
             }
             sagaStepRepo.insert(*steps.toTypedArray())
@@ -175,7 +185,7 @@ open class SagaOrchestrator private constructor(
         }!!
     }
 
-    class Builder<L>(
+    class Builder<I>(
         private val sagaRepo: SagaRepository,
         private val sagaStepRepo: SagaStepRepository,
         private val sagaStepErrorRepository: SagaStepErrorRepository,
@@ -183,20 +193,20 @@ open class SagaOrchestrator private constructor(
 
         private var retryStrategy: RetryStrategy = ExponentialRetryStrategy(Duration.ofMinutes(1), 2.0, 10.0),
         private var alias: String = UUID.randomUUID().toString(),
-        private val views: List<Pair<SagaStepView<*, *>, ContextSerde<*>>> = listOf()
+        private val views: List<Pair<SagaStepView<*, *>, ContextSerde<*, *>>> = listOf()
     ) {
 
-        fun setAlias(alias: String): Builder<L> {
+        fun setAlias(alias: String): Builder<I> {
             this.alias = alias
             return this
         }
 
-        fun setRetryStrategy(retryStrategy: RetryStrategy): Builder<L> {
+        fun setRetryStrategy(retryStrategy: RetryStrategy): Builder<I> {
             this.retryStrategy = retryStrategy
             return this
         }
 
-        fun <O> addStep(serde: ContextSerde<out L>, view: SagaStepView<out L, O>): Builder<O> {
+        fun <O> addStep(serde: ContextSerde<out I, O>, view: SagaStepView<out I, O>): Builder<O> {
             return Builder(sagaRepo, sagaStepRepo, sagaStepErrorRepository, tm, retryStrategy, alias, views.plus(view to serde))
         }
 

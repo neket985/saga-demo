@@ -22,7 +22,7 @@ import org.jooq.Identity
 import org.jooq.Index
 import org.jooq.Name
 import org.jooq.Record
-import org.jooq.Row9
+import org.jooq.Row10
 import org.jooq.Schema
 import org.jooq.Table
 import org.jooq.TableField
@@ -98,9 +98,14 @@ open class SagaStep(
     val TRANSACTION_TYPE: TableField<SagaStepRecord, TransactionType?> = createField(DSL.name("transaction_type"), SQLDataType.VARCHAR.nullable(false).asEnumDataType(com.example.demo.db.enums.TransactionType::class.java), this, "")
 
     /**
-     * The column <code>saga_scheme.saga_step.context</code>.
+     * The column <code>saga_scheme.saga_step.input_context</code>.
      */
-    val CONTEXT: TableField<SagaStepRecord, ByteArray?> = createField(DSL.name("context"), SQLDataType.BLOB, this, "")
+    val INPUT_CONTEXT: TableField<SagaStepRecord, ByteArray?> = createField(DSL.name("input_context"), SQLDataType.BLOB, this, "")
+
+    /**
+     * The column <code>saga_scheme.saga_step.output_context</code>.
+     */
+    val OUTPUT_CONTEXT: TableField<SagaStepRecord, ByteArray?> = createField(DSL.name("output_context"), SQLDataType.BLOB, this, "")
 
     /**
      * The column <code>saga_scheme.saga_step.inserted_at</code>.
@@ -159,7 +164,7 @@ open class SagaStep(
     override fun rename(name: Name): SagaStep = SagaStep(name, null)
 
     // -------------------------------------------------------------------------
-    // Row9 type methods
+    // Row10 type methods
     // -------------------------------------------------------------------------
-    override fun fieldsRow(): Row9<Int?, Int?, Int?, StepCompletionType?, Int?, TransactionType?, ByteArray?, LocalDateTime?, LocalDateTime?> = super.fieldsRow() as Row9<Int?, Int?, Int?, StepCompletionType?, Int?, TransactionType?, ByteArray?, LocalDateTime?, LocalDateTime?>
+    override fun fieldsRow(): Row10<Int?, Int?, Int?, StepCompletionType?, Int?, TransactionType?, ByteArray?, ByteArray?, LocalDateTime?, LocalDateTime?> = super.fieldsRow() as Row10<Int?, Int?, Int?, StepCompletionType?, Int?, TransactionType?, ByteArray?, ByteArray?, LocalDateTime?, LocalDateTime?>
 }

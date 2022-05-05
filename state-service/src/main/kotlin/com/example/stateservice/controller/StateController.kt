@@ -1,5 +1,6 @@
 package com.example.stateservice.controller
 
+import com.example.stateservice.entity.IdEntity
 import com.example.stateservice.service.StateService
 import org.springframework.web.bind.annotation.*
 
@@ -9,7 +10,7 @@ class StateController(
 ) {
 
     @PostMapping
-    fun create(): Int = stateService.createOrder()
+    fun create() = IdEntity(stateService.createOrder())
 
     @PutMapping("{id}")
     fun approve(@PathVariable id: Int) = stateService.approveOrder(id)

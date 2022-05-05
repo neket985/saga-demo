@@ -5,8 +5,6 @@ import com.example.demo.db.tables.daos.SagaStepDao
 import com.example.demo.db.tables.pojos.SagaStep
 import com.example.demo.db.tables.references.SAGA_STEP
 import org.jooq.DSLContext
-import org.jooq.impl.DSL
-import org.jooq.util.cubrid.CUBRIDDSL.incr
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -26,9 +24,16 @@ class SagaStepRepository(
             .where(SAGA_STEP.ID.eq(id))
             .execute()
 
-    fun updateContextById(id: Int, context: ByteArray?) =
+    fun updateInputContextById(id: Int, context: ByteArray?) =
         dsl.update(SAGA_STEP)
-            .set(SAGA_STEP.CONTEXT, context)
+            .set(SAGA_STEP.INPUT_CONTEXT, context)
+            .where(SAGA_STEP.ID.eq(id))
+            .execute()
+
+    fun updateStateAndOutputContextById(id: Int, state: StepCompletionType, context: ByteArray?) =
+        dsl.update(SAGA_STEP)
+            .set(SAGA_STEP.COMPLETION_STATE, state)
+            .set(SAGA_STEP.OUTPUT_CONTEXT, context)
             .where(SAGA_STEP.ID.eq(id))
             .execute()
 

@@ -53,7 +53,7 @@ internal class SagaOrchestratorTest() {
             .addStep(jacksonContextSerde(mapper), incrementStep)
             .build()
 
-        orchestrator.runNew(customNumber, jacksonContextSerde<Any>(mapper))
+        orchestrator.runNew(customNumber, jacksonContextSerde<Any, Any>(mapper))
         assertEquals(12, customNumber)
     }
 
@@ -92,11 +92,12 @@ internal class SagaOrchestratorTest() {
                 val expectedNum = (expectedCustomNumber + 2).let { Math.pow(it.toDouble(), 2.0) + 1 }.let { Math.pow(it, 2.0) }.toInt()
                 assertEquals(expectedNum, customNumber)
                 throw JokeException("oops... i must rollback all operations... again...")
+                1
             })
             .build()
 
         assertThrows<JokeException> {
-            orchestrator.runNew(customNumber, jacksonContextSerde<Any>(mapper))
+            orchestrator.runNew(customNumber, jacksonContextSerde<Any, Any>(mapper))
         }
 
         Thread.sleep(1000)

@@ -21,7 +21,8 @@ create table saga_step
     completion_state STEP_COMPLETION_TYPE not null,
     tries_count      int                  not null default 0,
     transaction_type TRANSACTION_TYPE     not null,
-    context          bytea,
+    input_context    bytea,
+    output_context   bytea,
     inserted_at      timestamp            not null default now(),
     updated_at       timestamp            not null default now()
 

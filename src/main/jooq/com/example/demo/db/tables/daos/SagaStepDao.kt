@@ -98,14 +98,24 @@ open class SagaStepDao(configuration: Configuration?) : DAOImpl<SagaStepRecord, 
     fun fetchByTransactionType(vararg values: TransactionType): List<com.example.demo.db.tables.pojos.SagaStep> = fetch(SagaStep.SAGA_STEP.TRANSACTION_TYPE, *values)
 
     /**
-     * Fetch records that have <code>context BETWEEN lowerInclusive AND upperInclusive</code>
+     * Fetch records that have <code>input_context BETWEEN lowerInclusive AND upperInclusive</code>
      */
-    fun fetchRangeOfContext(lowerInclusive: ByteArray?, upperInclusive: ByteArray?): List<com.example.demo.db.tables.pojos.SagaStep> = fetchRange(SagaStep.SAGA_STEP.CONTEXT, lowerInclusive, upperInclusive)
+    fun fetchRangeOfInputContext(lowerInclusive: ByteArray?, upperInclusive: ByteArray?): List<com.example.demo.db.tables.pojos.SagaStep> = fetchRange(SagaStep.SAGA_STEP.INPUT_CONTEXT, lowerInclusive, upperInclusive)
 
     /**
-     * Fetch records that have <code>context IN (values)</code>
+     * Fetch records that have <code>input_context IN (values)</code>
      */
-    fun fetchByContext(vararg values: ByteArray): List<com.example.demo.db.tables.pojos.SagaStep> = fetch(SagaStep.SAGA_STEP.CONTEXT, *values)
+    fun fetchByInputContext(vararg values: ByteArray): List<com.example.demo.db.tables.pojos.SagaStep> = fetch(SagaStep.SAGA_STEP.INPUT_CONTEXT, *values)
+
+    /**
+     * Fetch records that have <code>output_context BETWEEN lowerInclusive AND upperInclusive</code>
+     */
+    fun fetchRangeOfOutputContext(lowerInclusive: ByteArray?, upperInclusive: ByteArray?): List<com.example.demo.db.tables.pojos.SagaStep> = fetchRange(SagaStep.SAGA_STEP.OUTPUT_CONTEXT, lowerInclusive, upperInclusive)
+
+    /**
+     * Fetch records that have <code>output_context IN (values)</code>
+     */
+    fun fetchByOutputContext(vararg values: ByteArray): List<com.example.demo.db.tables.pojos.SagaStep> = fetch(SagaStep.SAGA_STEP.OUTPUT_CONTEXT, *values)
 
     /**
      * Fetch records that have <code>inserted_at BETWEEN lowerInclusive AND upperInclusive</code>
