@@ -17,7 +17,6 @@ import java.time.Duration
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
-import javax.annotation.PostConstruct
 
 /**
  * Простой пример сервиса, использующего сагу для регистрации пользователя
@@ -53,7 +52,7 @@ class SampleOrchestrator(
                 orderService.rejectOrder(o)
             }
         }))
-        .addStep(jacksonContextSerde(mapper), compensatableView({orderId ->
+        .addStep(jacksonContextSerde(mapper), compensatableView({ orderId ->
             orderId!! to fiscalService.createFiscal(orderId)
         }, { _, o ->
             if (o != null) {
@@ -73,16 +72,16 @@ class SampleOrchestrator(
     override val retryBatchSize: Int = 100
     override val inProgressTimeout: Duration = Duration.ofSeconds(30)
 
-    @PostConstruct
-    fun test() {
-        val executor = ThreadPoolExecutor(10, 10, 1, TimeUnit.DAYS, LinkedBlockingQueue(100), ThreadPoolExecutor.CallerRunsPolicy())
+    private val executor = ThreadPoolExecutor(50, 50, 1, TimeUnit.DAYS, LinkedBlockingQueue(100), ThreadPoolExecutor.CallerRunsPolicy())
+
+    fun runSamples(count: Int, delayMs: Long) {
         Thread {
-//            while (true) {
+            (0 until count).forEach {
                 executor.execute {
                     orchestrator.runNew()
                 }
-                Thread.sleep(500)
-//            }
+                Thread.sleep(delayMs)
+            }
         }.start()
     }
 }
